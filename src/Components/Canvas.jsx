@@ -1,6 +1,8 @@
-import { Stage, Layer, Path, Rect, Ellipse, Line, Text, Arrow } from 'react-konva'
+import { Stage, Layer, Path, Text } from 'react-konva'
 import useWhiteboardStore from '../store/useWhiteboardStore'
 import { getStrokePath } from '../utils/getStrokePath'
+import { getRoughRect, getRoughCircle, getRoughLine, getRoughArrow } from '../utils/getRoughPath'
+import { useRef } from 'react'
 
 function renderElement(el, tool, eraseElement) {
     const eraserProps = tool === 'eraser' ? {
@@ -19,15 +21,14 @@ function renderElement(el, tool, eraseElement) {
     }
 
     if (el.type === 'rect') {
+        const x = el.width < 0 ? el.x + el.width : el.x
+        const y = el.height < 0 ? el.y + el.height : el.y
         return (
-            <Rect
+            <Path
                 key={el.id}
-                x={el.width < 0 ? el.x + el.width : el.x}
-                y={el.height < 0 ? el.y + el.height : el.y}
-                width={Math.abs(el.width)}
-                height={Math.abs(el.height)}
+                data={getRoughRect(x, y, Math.abs(el.width), Math.abs(el.height))}
                 stroke="black"
-                strokeWidth={2}
+                strokeWidth={1}
                 fill="transparent"
                 {...eraserProps}
             />
@@ -36,14 +37,11 @@ function renderElement(el, tool, eraseElement) {
 
     if (el.type === 'circle') {
         return (
-            <Ellipse
+            <Path
                 key={el.id}
-                x={el.x + el.width / 2}
-                y={el.y + el.height / 2}
-                radiusX={Math.abs(el.width / 2)}
-                radiusY={Math.abs(el.height / 2)}
+                data={getRoughCircle(el.x, el.y, el.width, el.height)}
                 stroke="black"
-                strokeWidth={2}
+                strokeWidth={1}
                 fill="transparent"
                 {...eraserProps}
             />
@@ -52,11 +50,12 @@ function renderElement(el, tool, eraseElement) {
 
     if (el.type === 'line') {
         return (
-            <Line
+            <Path
                 key={el.id}
-                points={[el.x, el.y, el.x + el.width, el.y + el.height]}
+                data={getRoughLine(el.x, el.y, el.x + el.width, el.y + el.height)}
                 stroke="black"
-                strokeWidth={2}
+                strokeWidth={1}
+                fill="transparent"
                 {...eraserProps}
             />
         )
@@ -64,14 +63,12 @@ function renderElement(el, tool, eraseElement) {
 
     if (el.type === 'arrow') {
         return (
-            <Arrow
+            <Path
                 key={el.id}
-                points={[el.x, el.y, el.x + el.width, el.y + el.height]}
+                data={getRoughArrow(el.x, el.y, el.x + el.width, el.y + el.height)}
                 stroke="black"
-                strokeWidth={2}
-                fill="black"
-                pointerLength={10}
-                pointerWidth={8}
+                strokeWidth={1}
+                fill="transparent"
                 {...eraserProps}
             />
         )
@@ -84,8 +81,8 @@ function renderElement(el, tool, eraseElement) {
                 x={el.x}
                 y={el.y}
                 text={el.text}
-                fontSize={16}
-                fontFamily="sans-serif"
+                fontSize={20}
+                fontFamily="Caveat"
                 fill="black"
                 {...eraserProps}
             />
@@ -96,6 +93,7 @@ function renderElement(el, tool, eraseElement) {
 export default function Canvas() {
     const width = window.innerWidth
     const height = window.innerHeight
+    const isEditingRef = useRef(false)
 
     const {
         tool, elements, currentElement,
@@ -106,9 +104,15 @@ export default function Canvas() {
     const handleMouseDown = (e) => {
         if (tool === 'eraser') return
 
+        if (isEditingRef.current) {
+            isEditingRef.current = false
+            return
+        }
+
         const pos = e.target.getStage().getPointerPosition()
 
         if (tool === 'text') {
+            isEditingRef.current = true
             startEditingText(pos.x, pos.y)
             return
         }

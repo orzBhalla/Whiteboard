@@ -44,14 +44,14 @@ const useWhiteboardStore = create((set) => ({
     })),
 
     startEditingText: (x, y) => set({
-        editingText: {id: nanoid(), x, y} 
+        editingText: { id: nanoid(), x, y }
     }),
 
     commitText: (text) => set((state) => {
         if (!text.trim()) return { editingText: null }
         return {
             elements: [
-                ...state.elements, 
+                ...state.elements,
                 { id: state.editingText.id, type: 'text', x: state.editingText.x, y: state.editingText.y, text },
             ],
             editingText: null,
