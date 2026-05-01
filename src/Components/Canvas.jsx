@@ -1,11 +1,10 @@
-import { Stage, Layer, Path, Rect, Ellipse, Line } from 'react-konva'
+import { Stage, Layer, Path, Rect, Ellipse, Line, Text, Arrow } from 'react-konva'
 import useWhiteboardStore from '../store/useWhiteboardStore'
 import { getStrokePath } from '../utils/getStrokePath'
 
 function renderElement(el, tool, eraseElement) {
     const eraserProps = tool === 'eraser' ? {
         onMouseEnter: () => eraseElement(el.id),
-        opacity: 1,
     } : {}
 
     if (el.type === 'pen') {
@@ -62,6 +61,36 @@ function renderElement(el, tool, eraseElement) {
             />
         )
     }
+
+    if (el.type === 'arrow') {
+        return (
+            <Arrow
+                key={el.id}
+                points={[el.x, el.y, el.x + el.width, el.y + el.height]}
+                stroke="black"
+                strokeWidth={2}
+                fill="black"
+                pointerLength={10}
+                pointerWidth={8}
+                {...eraserProps}
+            />
+        )
+    }
+
+    if (el.type === 'text') {
+        return (
+            <Text
+                key={el.id}
+                x={el.x}
+                y={el.y}
+                text={el.text}
+                fontSize={16}
+                fontFamily="sans-serif"
+                fill="black"
+                {...eraserProps}
+            />
+        )
+    }
 }
 
 export default function Canvas() {
@@ -70,12 +99,20 @@ export default function Canvas() {
 
     const {
         tool, elements, currentElement,
-        startElement, updateElement, endElement, eraseElement
+        startElement, updateElement, endElement,
+        eraseElement, startEditingText
     } = useWhiteboardStore()
 
     const handleMouseDown = (e) => {
         if (tool === 'eraser') return
+
         const pos = e.target.getStage().getPointerPosition()
+
+        if (tool === 'text') {
+            startEditingText(pos.x, pos.y)
+            return
+        }
+
         startElement([pos.x, pos.y], tool)
     }
 
@@ -90,11 +127,17 @@ export default function Canvas() {
         endElement()
     }
 
+    const getCursor = () => {
+        if (tool === 'eraser') return 'cell'
+        if (tool === 'text') return 'text'
+        return 'crosshair'
+    }
+
     return (
         <Stage
             width={width}
             height={height}
-            style={{ cursor: tool === 'eraser' ? 'cell' : 'crosshair', background: '#F9FAFB' }}
+            style={{ cursor: getCursor(), background: '#F9FAFB' }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}

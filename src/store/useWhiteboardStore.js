@@ -5,6 +5,7 @@ const useWhiteboardStore = create((set) => ({
     tool: null,
     elements: [],
     currentElement: null,
+    editingText: null,
 
     setTool: (tool) => set({ tool }),
 
@@ -41,6 +42,23 @@ const useWhiteboardStore = create((set) => ({
     eraseElement: (id) => set((state) => ({
         elements: state.elements.filter(el => el.id !== id)
     })),
+
+    startEditingText: (x, y) => set({
+        editingText: {id: nanoid(), x, y} 
+    }),
+
+    commitText: (text) => set((state) => {
+        if (!text.trim()) return { editingText: null }
+        return {
+            elements: [
+                ...state.elements, 
+                { id: state.editingText.id, type: 'text', x: state.editingText.x, y: state.editingText.y, text },
+            ],
+            editingText: null,
+        }
+    }),
+
+    cancelText: () => set({ editingText: null }),
 }))
 
 export default useWhiteboardStore

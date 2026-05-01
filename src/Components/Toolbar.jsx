@@ -1,4 +1,4 @@
-import { Pencil, Square, Circle, Minus, Eraser } from 'lucide-react'
+import { Pencil, Square, Circle, Minus, Eraser, Type, MoveUpRight } from 'lucide-react'
 import useWhiteboardStore from '../store/useWhiteboardStore'
 
 const tools = [
@@ -6,7 +6,9 @@ const tools = [
     { id: 'rect', icon: Square },
     { id: 'circle', icon: Circle },
     { id: 'line', icon: Minus },
+    { id: 'arrow', icon: MoveUpRight },
     { id: 'eraser', icon: Eraser },
+    { id: 'text', icon: Type },
 ]
 
 export default function Toolbar() {
