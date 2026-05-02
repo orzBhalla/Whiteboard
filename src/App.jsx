@@ -1,6 +1,7 @@
 import Canvas from "./Components/Canvas"
 import TextInput from "./Components/TextInput"
 import Toolbar from "./Components/Toolbar"
+import PropertiesPanel from "./Components/PropertiesPanel"
 
 function App() {
   return (
@@ -8,6 +9,7 @@ function App() {
       <Toolbar />
       <Canvas />
       <TextInput />
+      <PropertiesPanel />
     </div>
   )
 }

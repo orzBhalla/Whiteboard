@@ -14,7 +14,7 @@ function renderElement(el, tool, eraseElement) {
             <Path
                 key={el.id}
                 data={getStrokePath(el.points)}
-                fill="black"
+                fill={el.stroke}
                 {...eraserProps}
             />
         )
@@ -26,10 +26,10 @@ function renderElement(el, tool, eraseElement) {
         return (
             <Path
                 key={el.id}
-                data={getRoughRect(x, y, Math.abs(el.width), Math.abs(el.height))}
-                stroke="black"
+                data={getRoughRect(x, y, Math.abs(el.width), Math.abs(el.height), el.stroke, el.strokeWidth, el.fill, el.seed)}
+                stroke={el.stroke}
                 strokeWidth={1}
-                fill="transparent"
+                fill={el.fill === 'solid' ? el.stroke : 'transparent'}
                 {...eraserProps}
             />
         )
@@ -39,10 +39,10 @@ function renderElement(el, tool, eraseElement) {
         return (
             <Path
                 key={el.id}
-                data={getRoughCircle(el.x, el.y, el.width, el.height)}
-                stroke="black"
+                data={getRoughCircle(el.x, el.y, el.width, el.height, el.stroke, el.strokeWidth, el.fill, el.seed)}
+                stroke={el.stroke}
                 strokeWidth={1}
-                fill="transparent"
+                fill={el.fill === 'solid' ? el.stroke : 'transparent'}
                 {...eraserProps}
             />
         )
@@ -52,8 +52,8 @@ function renderElement(el, tool, eraseElement) {
         return (
             <Path
                 key={el.id}
-                data={getRoughLine(el.x, el.y, el.x + el.width, el.y + el.height)}
-                stroke="black"
+                data={getRoughLine(el.x, el.y, el.x + el.width, el.y + el.height, el.stroke, el.strokeWidth, el.seed)}
+                stroke={el.stroke}
                 strokeWidth={1}
                 fill="transparent"
                 {...eraserProps}
@@ -65,8 +65,8 @@ function renderElement(el, tool, eraseElement) {
         return (
             <Path
                 key={el.id}
-                data={getRoughArrow(el.x, el.y, el.x + el.width, el.y + el.height)}
-                stroke="black"
+                data={getRoughArrow(el.x, el.y, el.x + el.width, el.y + el.height, el.stroke, el.strokeWidth, el.seed)}
+                stroke={el.stroke}
                 strokeWidth={1}
                 fill="transparent"
                 {...eraserProps}
@@ -81,9 +81,9 @@ function renderElement(el, tool, eraseElement) {
                 x={el.x}
                 y={el.y}
                 text={el.text}
-                fontSize={20}
+                fontSize={el.fontSize}
                 fontFamily="Caveat"
-                fill="black"
+                fill={el.color}
                 {...eraserProps}
             />
         )
@@ -98,8 +98,13 @@ export default function Canvas() {
     const {
         tool, elements, currentElement,
         startElement, updateElement, endElement,
-        eraseElement, startEditingText
+        eraseElement, startEditingText, editingText,
+        activeStroke, activeStrokeWidth, activeFill,
+        activeTextColor, activeFontSize,
+        commitText, cancelText,
     } = useWhiteboardStore()
+
+    const activeStyles = { activeStroke, activeStrokeWidth, activeFill, activeTextColor, activeFontSize }
 
     const handleMouseDown = (e) => {
         if (tool === 'eraser') return
@@ -117,7 +122,7 @@ export default function Canvas() {
             return
         }
 
-        startElement([pos.x, pos.y], tool)
+        startElement([pos.x, pos.y], tool, activeStyles)
     }
 
     const handleMouseMove = (e) => {

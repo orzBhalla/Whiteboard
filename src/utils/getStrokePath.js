@@ -1,13 +1,13 @@
 import getStroke from 'perfect-freehand'
 
-const options = {
-    size: 4,        // brush size
-    smoothing: 0.5, // how smooth the edges are
-    thinning: 0.5,  // how much the stroke thins at ends
-    streamline: 0.5 // how much to smooth out shaky lines
-}
+export function getStrokePath(points, strokeWidth = 2) {
+    const options = {
+        size: strokeWidth * 2,   
+        smoothing: 0.5,
+        thinning: 0.5,
+        streamline: 0.5,
+    }
 
-export function getStrokePath(points) {
     const stroke = getStroke(points, options)
     if (!stroke.length) return ''
 
