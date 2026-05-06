@@ -17,7 +17,9 @@ const useWhiteboardStore = create((set) => ({
     activeFontSize: 20,
     stagePos: { x: 0, y: 0 },
     stageScale: 1,
+    stageRef: null,
 
+    setStageRef: (ref) => set({ stageRef: ref }),
     setTool: (tool) => set({ tool }),
     setActiveStroke: (color) => set({ activeStroke: color }),
     setActiveStrokeWidth: (width) => set({ activeStrokeWidth: width }),
@@ -26,6 +28,14 @@ const useWhiteboardStore = create((set) => ({
     setActiveFontSize: (size) => set({ activeFontSize: size }),
     setStagePos: (pos) => set({ stagePos: pos }),
     setStageScale: (scale) => set({ stageScale: scale }),
+    setElements: (elements) => set((state) => {
+        const newHistory = [...state.history.slice(0, state.historyIndex + 1), elements]
+        return {
+            elements,
+            history: newHistory,
+            historyIndex: newHistory.length - 1,
+        }
+    }),
 
     startElement: (point, tool, styles) => set({
         currentElement: tool === 'pen'

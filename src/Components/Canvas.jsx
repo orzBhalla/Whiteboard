@@ -1,5 +1,5 @@
 import { Stage, Layer, Path, Text } from 'react-konva'
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import useWhiteboardStore from '../store/useWhiteboardStore'
 import { getStrokePath } from '../utils/getStrokePath'
 import { getRoughRect, getRoughCircle, getRoughLine, getRoughArrow } from '../utils/getRoughPath'
@@ -18,6 +18,7 @@ function renderElement(el, tool, eraseElement) {
                 key={el.id}
                 data={getStrokePath(el.points, el.strokeWidth)}
                 fill={el.stroke}
+                hitStrokeWidth={20}
                 {...eraserProps}
             />
         )
@@ -33,6 +34,7 @@ function renderElement(el, tool, eraseElement) {
                 stroke={el.stroke}
                 strokeWidth={1}
                 fill={el.fill === 'solid' ? el.stroke : 'transparent'}
+                hitStrokeWidth={20}
                 {...eraserProps}
             />
         )
@@ -46,6 +48,7 @@ function renderElement(el, tool, eraseElement) {
                 stroke={el.stroke}
                 strokeWidth={1}
                 fill={el.fill === 'solid' ? el.stroke : 'transparent'}
+                hitStrokeWidth={20}
                 {...eraserProps}
             />
         )
@@ -59,6 +62,7 @@ function renderElement(el, tool, eraseElement) {
                 stroke={el.stroke}
                 strokeWidth={1}
                 fill="transparent"
+                hitStrokeWidth={20}
                 {...eraserProps}
             />
         )
@@ -72,6 +76,7 @@ function renderElement(el, tool, eraseElement) {
                 stroke={el.stroke}
                 strokeWidth={1}
                 fill="transparent"
+                hitStrokeWidth={20}
                 {...eraserProps}
             />
         )
@@ -96,19 +101,26 @@ function renderElement(el, tool, eraseElement) {
 export default function Canvas() {
     const width = window.innerWidth
     const height = window.innerHeight
+
     const isEditingRef = useRef(false)
-    const isPanningRef = useRef(false)    // ← tracks if we're panning
-    const lastPosRef = useRef(null)       // ← last mouse position during pan
+    const isPanningRef = useRef(false)
+    const lastPosRef = useRef(null)
+    const stageRef = useRef(null)
+
     const [isSpaceDown, setIsSpaceDown] = useState(false)
 
     const {
         tool, elements, currentElement,
         startElement, updateElement, endElement,
-        eraseElement, startEditingText, editingText,
-        activeStroke, activeStrokeWidth, activeFill,
-        activeTextColor, activeFontSize,
-        stagePos, stageScale, setStagePos, setStageScale,
+        eraseElement, startEditingText, activeStroke, 
+        activeStrokeWidth, activeFill, activeTextColor, 
+        activeFontSize, stagePos, stageScale, 
+        setStagePos, setStageScale, setStageRef,
     } = useWhiteboardStore()
+
+    useEffect(() => {
+        setStageRef(stageRef)
+    }, [])
 
     const activeStyles = { activeStroke, activeStrokeWidth, activeFill, activeTextColor, activeFontSize }
 
@@ -208,6 +220,7 @@ export default function Canvas() {
             style={{ outline: 'none' }} // ← hide focus ring
         >
             <Stage
+                ref={stageRef}
                 width={width}
                 height={height}
                 style={{ cursor: getCursor(), background: '#F9FAFB' }}

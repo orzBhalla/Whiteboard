@@ -1,5 +1,6 @@
 import { Pencil, Square, Circle, Minus, Eraser, Type, MoveUpRight, Undo2, Redo2, ZoomIn, ZoomOut, Maximize, Hand } from 'lucide-react'
 import useWhiteboardStore from '../store/useWhiteboardStore'
+import ExportMenu from './ExportMenu'
 
 const tools = [
     { id: 'hand', icon: Hand },
@@ -82,6 +83,9 @@ export default function Toolbar() {
                 <Maximize size={18} />
             </button>
 
-        </div>
+            <div className="w-px h-6 bg-gray-200 mx-1" />
+
+            <ExportMenu />
+        </div >
     )
 }
