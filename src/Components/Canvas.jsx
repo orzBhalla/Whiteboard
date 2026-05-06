@@ -1,8 +1,11 @@
 import { Stage, Layer, Path, Text } from 'react-konva'
+import { useRef, useState } from 'react'
 import useWhiteboardStore from '../store/useWhiteboardStore'
 import { getStrokePath } from '../utils/getStrokePath'
 import { getRoughRect, getRoughCircle, getRoughLine, getRoughArrow } from '../utils/getRoughPath'
-import { useRef } from 'react'
+
+const MIN_SCALE = 0.1
+const MAX_SCALE = 5
 
 function renderElement(el, tool, eraseElement) {
     const eraserProps = tool === 'eraser' ? {
@@ -13,7 +16,7 @@ function renderElement(el, tool, eraseElement) {
         return (
             <Path
                 key={el.id}
-                data={getStrokePath(el.points)}
+                data={getStrokePath(el.points, el.strokeWidth)}
                 fill={el.stroke}
                 {...eraserProps}
             />
@@ -94,6 +97,9 @@ export default function Canvas() {
     const width = window.innerWidth
     const height = window.innerHeight
     const isEditingRef = useRef(false)
+    const isPanningRef = useRef(false)    // ← tracks if we're panning
+    const lastPosRef = useRef(null)       // ← last mouse position during pan
+    const [isSpaceDown, setIsSpaceDown] = useState(false)
 
     const {
         tool, elements, currentElement,
@@ -101,20 +107,55 @@ export default function Canvas() {
         eraseElement, startEditingText, editingText,
         activeStroke, activeStrokeWidth, activeFill,
         activeTextColor, activeFontSize,
-        commitText, cancelText,
+        stagePos, stageScale, setStagePos, setStageScale,
     } = useWhiteboardStore()
 
     const activeStyles = { activeStroke, activeStrokeWidth, activeFill, activeTextColor, activeFontSize }
 
-    const handleMouseDown = (e) => {
-        if (tool === 'eraser') return
+    const handleWheel = (e) => {
+        e.evt.preventDefault()
+        if (!e.evt.ctrlKey) return
 
+        const stage = e.target.getStage()
+        const oldScale = stageScale
+        const pointer = stage.getPointerPosition()
+
+        const scaleBy = 1.05
+        const newScale = e.evt.deltaY < 0
+            ? Math.min(oldScale * scaleBy, MAX_SCALE)
+            : Math.max(oldScale / scaleBy, MIN_SCALE)
+
+        const newPos = {
+            x: pointer.x - (pointer.x - stagePos.x) * (newScale / oldScale),
+            y: pointer.y - (pointer.y - stagePos.y) * (newScale / oldScale),
+        }
+
+        setStageScale(newScale)
+        setStagePos(newPos)
+    }
+
+    const handleKeyDown = (e) => {
+        if (e.code === 'Space') setIsSpaceDown(true)
+    }
+    const handleKeyUp = (e) => {
+        if (e.code === 'Space') setIsSpaceDown(false)
+    }
+
+    const handleMouseDown = (e) => {
+        if (tool === 'hand' || isSpaceDown || e.evt.button === 1) {
+            isPanningRef.current = true
+            lastPosRef.current = { x: e.evt.clientX, y: e.evt.clientY }
+            return
+        }
+
+        if (tool === 'eraser') return
         if (isEditingRef.current) {
             isEditingRef.current = false
             return
         }
 
-        const pos = e.target.getStage().getPointerPosition()
+        const stage = e.target.getStage()
+        const pos = stage.getRelativePointerPosition()
 
         if (tool === 'text') {
             isEditingRef.current = true
@@ -126,35 +167,64 @@ export default function Canvas() {
     }
 
     const handleMouseMove = (e) => {
+        if (isPanningRef.current) {
+            const dx = e.evt.clientX - lastPosRef.current.x
+            const dy = e.evt.clientY - lastPosRef.current.y
+            setStagePos({ x: stagePos.x + dx, y: stagePos.y + dy })
+            lastPosRef.current = { x: e.evt.clientX, y: e.evt.clientY }
+            return
+        }
+
         if (!currentElement) return
-        const pos = e.target.getStage().getPointerPosition()
+        const stage = e.target.getStage()
+        const pos = stage.getRelativePointerPosition()  // ← accounts for pan/zoom
         updateElement([pos.x, pos.y])
     }
 
     const handleMouseUp = () => {
+        if (isPanningRef.current) {
+            isPanningRef.current = false
+            lastPosRef.current = null
+            return
+        }
         if (!currentElement) return
         endElement()
     }
 
     const getCursor = () => {
+        if (tool === 'hand') return isPanningRef.current ? 'grabbing' : 'grab'
+        if (isSpaceDown) return 'grab'
+        if (isPanningRef.current) return 'grabbing'
         if (tool === 'eraser') return 'cell'
         if (tool === 'text') return 'text'
         return 'crosshair'
     }
 
     return (
-        <Stage
-            width={width}
-            height={height}
-            style={{ cursor: getCursor(), background: '#F9FAFB' }}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
+        <div
+            onKeyDown={handleKeyDown}
+            onKeyUp={handleKeyUp}
+            tabIndex={0}                // ← needed to receive keyboard events
+            style={{ outline: 'none' }} // ← hide focus ring
         >
-            <Layer>
-                {elements.map((el) => renderElement(el, tool, eraseElement))}
-                {currentElement && renderElement(currentElement, tool, eraseElement)}
-            </Layer>
-        </Stage>
+            <Stage
+                width={width}
+                height={height}
+                style={{ cursor: getCursor(), background: '#F9FAFB' }}
+                x={stagePos.x}
+                y={stagePos.y}
+                scaleX={stageScale}
+                scaleY={stageScale}
+                onWheel={handleWheel}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+            >
+                <Layer>
+                    {elements.map((el) => renderElement(el, tool, eraseElement))}
+                    {currentElement && renderElement(currentElement, tool, eraseElement)}
+                </Layer>
+            </Stage>
+        </div>
     )
 }

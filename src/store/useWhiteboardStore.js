@@ -15,6 +15,8 @@ const useWhiteboardStore = create((set) => ({
     activeFill: 'none',
     activeTextColor: '#000000',
     activeFontSize: 20,
+    stagePos: { x: 0, y: 0 },
+    stageScale: 1,
 
     setTool: (tool) => set({ tool }),
     setActiveStroke: (color) => set({ activeStroke: color }),
@@ -22,6 +24,8 @@ const useWhiteboardStore = create((set) => ({
     setActiveFill: (fill) => set({ activeFill: fill }),
     setActiveTextColor: (color) => set({ activeTextColor: color }),
     setActiveFontSize: (size) => set({ activeFontSize: size }),
+    setStagePos: (pos) => set({ stagePos: pos }),
+    setStageScale: (scale) => set({ stageScale: scale }),
 
     startElement: (point, tool, styles) => set({
         currentElement: tool === 'pen'
@@ -108,7 +112,7 @@ const useWhiteboardStore = create((set) => ({
     cancelText: () => set({ editingText: null }),
 
     undo: () => set((state) => {
-        if (state.historyIndex === 0) return {}   
+        if (state.historyIndex === 0) return {}
         const newIndex = state.historyIndex - 1
         return {
             historyIndex: newIndex,
@@ -117,13 +121,15 @@ const useWhiteboardStore = create((set) => ({
     }),
 
     redo: () => set((state) => {
-        if (state.historyIndex === state.history.length - 1) return {}  
+        if (state.historyIndex === state.history.length - 1) return {}
         const newIndex = state.historyIndex + 1
         return {
             historyIndex: newIndex,
             elements: state.history[newIndex],
         }
     }),
+
+    resetView: () => set({ stagePos: { x: 0, y: 0 }, stageScale: 1 }),
 }))
 
 export default useWhiteboardStore
