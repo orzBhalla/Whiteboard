@@ -2,8 +2,21 @@ import Canvas from "./Components/Canvas"
 import TextInput from "./Components/TextInput"
 import Toolbar from "./Components/Toolbar"
 import PropertiesPanel from "./Components/PropertiesPanel"
+import useWhiteboardStore from "./store/useWhiteboardStore"
+import { useEffect } from "react"
 
 function App() {
+  const { undo, redo } = useWhiteboardStore()
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo() }
+      if (e.ctrlKey && e.key === 'y') { e.preventDefault(); redo() }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [undo, redo])
+
   return (
     <div className="w-screen h-screen overflow-hidden bg-gray-50">
       <Toolbar />

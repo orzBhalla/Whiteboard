@@ -6,11 +6,13 @@ const randomSeed = () => Math.floor(Math.random() * 10000) + 1;
 const useWhiteboardStore = create((set) => ({
     tool: null,
     elements: [],
+    history: [[]],
+    historyIndex: 0,
     currentElement: null,
     editingText: null,
     activeStroke: '#000000',
     activeStrokeWidth: 2,
-    activeFill: 'none',          // 'none' | 'hachure' | 'solid'
+    activeFill: 'none',
     activeTextColor: '#000000',
     activeFontSize: 20,
 
@@ -56,15 +58,25 @@ const useWhiteboardStore = create((set) => ({
 
     endElement: () => set((state) => {
         if (!state.currentElement) return;
+        const newElements = [...state.elements, state.currentElement]
+        const newHistory = [...state.history.slice(0, state.historyIndex + 1), newElements]
         return {
-            elements: [...state.elements, state.currentElement],
+            elements: newElements,
             currentElement: null,
+            history: newHistory,
+            historyIndex: newHistory.length - 1,
         }
     }),
 
-    eraseElement: (id) => set((state) => ({
-        elements: state.elements.filter(el => el.id !== id)
-    })),
+    eraseElement: (id) => set((state) => {
+        const newElements = state.elements.filter((el) => el.id !== id)
+        const newHistory = [...state.history.slice(0, state.historyIndex + 1), newElements]
+        return {
+            elements: newElements,
+            history: newHistory,
+            historyIndex: newHistory.length - 1,
+        }
+    }),
 
     startEditingText: (x, y) => set({
         editingText: { id: nanoid(), x, y }
@@ -72,24 +84,46 @@ const useWhiteboardStore = create((set) => ({
 
     commitText: (text, styles) => set((state) => {
         if (!text.trim()) return { editingText: null }
+        const newElements = [
+            ...state.elements,
+            {
+                id: state.editingText.id,
+                type: 'text',
+                x: state.editingText.x,
+                y: state.editingText.y,
+                text,
+                color: styles.activeTextColor,
+                fontSize: styles.activeFontSize,
+            }
+        ]
+        const newHistory = [...state.history.slice(0, state.historyIndex + 1), newElements]
         return {
-            elements: [
-                ...state.elements,
-                {
-                    id: state.editingText.id,
-                    type: 'text',
-                    x: state.editingText.x,
-                    y: state.editingText.y,
-                    text,
-                    color: styles.activeTextColor,
-                    fontSize: styles.activeFontSize,
-                }
-            ],
-            editingText: null
+            elements: newElements,
+            editingText: null,
+            history: newHistory,
+            historyIndex: newHistory.length - 1,
         }
     }),
 
     cancelText: () => set({ editingText: null }),
+
+    undo: () => set((state) => {
+        if (state.historyIndex === 0) return {}   
+        const newIndex = state.historyIndex - 1
+        return {
+            historyIndex: newIndex,
+            elements: state.history[newIndex],
+        }
+    }),
+
+    redo: () => set((state) => {
+        if (state.historyIndex === state.history.length - 1) return {}  
+        const newIndex = state.historyIndex + 1
+        return {
+            historyIndex: newIndex,
+            elements: state.history[newIndex],
+        }
+    }),
 }))
 
 export default useWhiteboardStore
