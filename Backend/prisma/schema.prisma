@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String        @id @default(uuid())
+  email     String        @unique
+  name      String
+  password  String
+  canvases  Canvas[]      @relation("owner")
+  shares    CanvasShare[]
+  createdAt DateTime      @default(now())
+}
+
+model Canvas {
+  id        String        @id @default(uuid())
+  name      String
+  elements  Json          @default("[]")
+  thumbnail String?
+  owner     User          @relation("owner", fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId   String
+  shares    CanvasShare[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model CanvasShare {
+  id       String @id @default(uuid())
+  canvas   Canvas @relation(fields: [canvasId], references: [id], onDelete: Cascade)
+  canvasId String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   String
+
+  @@unique([canvasId, userId])
+}
