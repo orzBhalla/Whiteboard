@@ -48,7 +48,7 @@ export default function Canvas() {
 
     // Setup socket connection
     useEffect(() => {
-        const socket = io('http://localhost:3000', {
+        const socket = io(import.meta.env.VITE_SOCKET_URL, {
             auth: { token }
         })
 
