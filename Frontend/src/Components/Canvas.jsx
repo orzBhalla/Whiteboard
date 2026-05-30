@@ -98,7 +98,7 @@ function renderElement(el, tool, eraseElement) {
     }
 }
 
-export default function Canvas() {
+export default function Canvas({ onCursorMove, cursors = {} }) {
     const width = window.innerWidth
     const height = window.innerHeight
 
@@ -112,9 +112,9 @@ export default function Canvas() {
     const {
         tool, elements, currentElement,
         startElement, updateElement, endElement,
-        eraseElement, startEditingText, activeStroke, 
-        activeStrokeWidth, activeFill, activeTextColor, 
-        activeFontSize, stagePos, stageScale, 
+        eraseElement, startEditingText, activeStroke,
+        activeStrokeWidth, activeFill, activeTextColor,
+        activeFontSize, stagePos, stageScale,
         setStagePos, setStageScale, setStageRef,
     } = useWhiteboardStore()
 
@@ -186,6 +186,10 @@ export default function Canvas() {
             lastPosRef.current = { x: e.evt.clientX, y: e.evt.clientY }
             return
         }
+
+        // Broadcast cursor position
+        const pointer = e.target.getStage().getPointerPosition()
+        onCursorMove?.(pointer.x, pointer.y)
 
         if (!currentElement) return
         const stage = e.target.getStage()

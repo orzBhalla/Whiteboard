@@ -1,30 +1,27 @@
-import Canvas from "./Components/Canvas"
-import TextInput from "./Components/TextInput"
-import Toolbar from "./Components/Toolbar"
-import PropertiesPanel from "./Components/PropertiesPanel"
-import useWhiteboardStore from "./store/useWhiteboardStore"
-import { useEffect } from "react"
+import { Routes, Route, Navigate } from 'react-router-dom'
+import Login from './pages/Login'
+import Register from './pages/Register'
+import Dashboard from './pages/Dashboard'
+import Canvas from './pages/Canvas'
+import ProtectedRoute from './Components/ProtectedRoute'
 
 function App() {
-  const { undo, redo, resetView } = useWhiteboardStore()
-
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo() }
-      if (e.ctrlKey && e.key === 'y') { e.preventDefault(); redo() }
-      if (e.ctrlKey && e.key === '0') { e.preventDefault(); resetView() }  // ← add this
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [undo, redo, resetView])
-
   return (
-    <div className="w-screen h-screen overflow-hidden bg-gray-50">
-      <Toolbar />
-      <Canvas />
-      <TextInput />
-      <PropertiesPanel />
-    </div>
+    <Routes>
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/canvas/:id" element={
+        <ProtectedRoute>
+          <Canvas />
+        </ProtectedRoute>
+      } />
+    </Routes>
   )
 }
 
